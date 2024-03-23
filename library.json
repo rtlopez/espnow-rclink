@@ -1,0 +1,26 @@
+{
+    "name": "espnow-rclink",
+    "version": "0.1.0-alpha1",
+    "description": "Remote control link library on ESP-NOW with telemetry",
+    "keywords": "espnow, rc link, remote control",
+    "repository":
+    {
+      "type": "git",
+      "url": "https://github.com/rtlopez/espnow-rclink.git"
+    },
+    "authors":
+    [
+      {
+        "name": "rtlopez",
+        "email": "rtlopezdev@gmail.com",
+        "url": "https://github.com/rtlopez",
+        "maintainer": true
+      }
+    ],
+    "license": "MIT",
+    "dependencies": {
+      "yoursunny/WifiEspNow": "^0.0.20230713"
+    },
+    "frameworks": ["arduino"],
+    "platforms": ["espressif8266", "espressif32"]
+  }
