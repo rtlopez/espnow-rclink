@@ -34,6 +34,7 @@ private:
   void _handleDiscovery();
   void _handleTransmit();
   void _handleReceived();
+  bool _allowed(const uint8_t *mac) const;
 
   static void _handleRx(const uint8_t* mac, const uint8_t *buf, size_t count, void *arg) IRAM_ATTR;
   static const uint8_t BCAST_PEER[WIFIESPNOW_ALEN];

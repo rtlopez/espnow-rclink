@@ -1,5 +1,6 @@
 #include "EspNowRcLink/Transmitter.h"
 
+
 namespace EspNowRcLink {
 
 const uint8_t Transmitter::BCAST_PEER[WIFIESPNOW_ALEN] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
@@ -9,16 +10,17 @@ void Transmitter::_handleRx(const uint8_t *mac, const uint8_t *buf, size_t count
   //debugMessage(mac, buf, count);
 
   if(count < PAYLOAD_SIZE_MIN || count > PAYLOAD_SIZE_MAX) return;
-  if(checksum(buf, count - 1) != buf[count - 2]) return;
+  if(checksum(buf, count - 1) != buf[count - 1]) return;
   auto dev = reinterpret_cast<Transmitter*>(arg);
-  if(dev)
-  {
-    Message m;
-    std::copy_n(mac, WIFIESPNOW_ALEN, m.mac);
-    m.len = std::min(count, PAYLOAD_SIZE_MAX);
-    std::copy_n(buf, m.len, m.payload);
-    dev->_queue.push(m);
-  }
+  if(!dev) return;
+
+  if(dev->_state == TRANSMITTING && !dev->_allowed(mac)) return;
+
+  Message m;
+  std::copy_n(mac, WIFIESPNOW_ALEN, m.mac);
+  m.len = std::min(count, PAYLOAD_SIZE_MAX);
+  std::copy_n(buf, m.len, m.payload);
+  dev->_queue.push(m);
 }
 
 Transmitter::Transmitter(): _channel(WIFI_CHANNEL_DEFAULT) {}
@@ -55,14 +57,14 @@ int Transmitter::update()
 
 void Transmitter::_handleDiscovery()
 {
-  // increment channel every 200mc
+  // increment channel every 200ms
   uint32_t now = millis();
-  if(_next_discovery < now)
+  if(now >= _next_discovery)
   {
     _channel++;
     if(_channel > WIFI_CHANNEL_MAX) _channel = WIFI_CHANNEL_MIN;
     _wifi_set_channel(_channel);
-    _next_discovery = now + 200;
+    _next_discovery = now + LINK_DISCOVERY_INTERVAL_MS;
   }
 }
 
@@ -97,12 +99,18 @@ void Transmitter::_handleReceived()
           std::copy_n(m.mac, WIFIESPNOW_ALEN, _peer); // remember peer address
           WifiEspNow.addPeer(_peer);
           MessagePairResponse m;
+
           _send(_peer, m); // notify receiver
         }
         break;
       }
       case FC_DATA:
+        // receive telemetry data
         std::copy_n(m.payload, sizeof(MessageFc), (uint8_t*)&_sensors);
+        break;
+
+      case FC_ALIVE:
+        // TODO:
         break;
 
       default:
@@ -114,7 +122,7 @@ void Transmitter::_handleReceived()
 void Transmitter::setChannel(size_t c, unsigned int value)
 {
   value = constrain(value, PWM_INPUT_MIN, PWM_INPUT_MAX);
-  if(c >= RC_CHANNEL_MIN && c <= RC_CHANNEL_MAX) return;
+  if(c < RC_CHANNEL_MIN && c > RC_CHANNEL_MAX) return;
   switch(c)
   {
     case 0: _channels.ch1 = value; break;
@@ -131,6 +139,11 @@ void Transmitter::setChannel(size_t c, unsigned int value)
 int8_t Transmitter::_encodeAux(int x) const
 {
   return (int8_t)(((x + 2) - PWM_INPUT_CENTER) / 5);
+}
+
+bool Transmitter::_allowed(const uint8_t *mac) const
+{
+  return std::equal(_peer, _peer + WIFIESPNOW_ALEN, mac);
 }
 
 int Transmitter::getSensor(size_t id) const

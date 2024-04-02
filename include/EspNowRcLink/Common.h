@@ -52,11 +52,10 @@ uint8_t checksum(const M& m)
 
 void inline debugMessage(const uint8_t *mac, const uint8_t *buf, size_t count)
 {
-  Serial.printf("[%02X:%02X:%02X:%02X:%02X:%02X]> ", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+  //Serial.printf("%02X:%02X:%02X:%02X:%02X:%02X> ", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
   for (size_t i = 0; i < count; ++i)
   {
-    Serial.print(buf[i], HEX);
-    Serial.print(' ');
+    Serial.printf("%02X ", buf[i]);
   }
   Serial.println();
 }

@@ -7,23 +7,22 @@ const uint8_t Receiver::BCAST_PEER[WIFIESPNOW_ALEN] = {0xff, 0xff, 0xff, 0xff, 0
 
 void Receiver::_handleRx(const uint8_t *mac, const uint8_t *buf, size_t count, void *arg)
 {
-  //debugMessage(mac, buf, count);
+  // debugMessage(mac, buf, count);
 
   if(count < PAYLOAD_SIZE_MIN || count > PAYLOAD_SIZE_MAX) return;
-  if(checksum(buf, count - 1) != buf[count - 2]) return;
+  if(checksum(buf, count - 1) != buf[count - 1]) return;
   auto dev = reinterpret_cast<Receiver*>(arg);
-  if(dev)
+  if(!dev) return;
+
+  if(buf[0] == PAIR_RES && dev->_state == BEACON)
   {
-    if(dev && buf[0] == PAIR_RES && dev->_state == BEACON)
-    {
-      std::copy_n(mac, WIFIESPNOW_ALEN, dev->_peer);
-      dev->_state = PAIR;
-    }
-    if(dev && buf[0] == RC_DATA && dev->_state == RECEIVING)
-    {
-      std::copy_n(buf, std::min(sizeof(MessageRc), count), (uint8_t*)&dev->_channels);
-      dev->_new_data = true;
-    }
+    std::copy_n(mac, WIFIESPNOW_ALEN, dev->_peer);
+    dev->_state = PAIR;
+  }
+  if(buf[0] == RC_DATA && dev->_state == RECEIVING && dev->_allowed(mac))
+  {
+    std::copy_n(buf, std::min((size_t)sizeof(MessageRc), count), (uint8_t*)&dev->_channels);
+    dev->_new_data = true;
   }
 }
 
@@ -32,7 +31,6 @@ Receiver::Receiver() {}
 int Receiver::begin()
 {
   WiFi.softAP("ESPFC-RX", nullptr, _channel, 1, 2);
-  WiFi.softAPdisconnect(false);
   _wifi_set_channel(_channel);
 
   if(!WifiEspNow.begin()) return 0;
@@ -55,21 +53,21 @@ int Receiver::update()
       _handlePair();
       break;
     case RECEIVING:
+      _handleAlive();
       break;
   }
-
   return 1;
 }
 
 void Receiver::_handleBeacon()
 {
   uint32_t now = millis();
-  if(_next_beacon < now)
+  if(now >= _next_beacon)
   {
     MessagePairRequest m;
     m.channel = _channel;
     _send(BCAST_PEER, m);
-    _next_beacon = now + 50;
+    _next_beacon = now + LINK_BEACON_INTERVAL_MS;
   }
 }
 
@@ -80,7 +78,18 @@ void Receiver::_handlePair()
   _state = RECEIVING;
 }
 
-int Receiver::available() const
+void Receiver::_handleAlive()
+{
+  uint32_t now = millis();
+  if(now >= _next_alive)
+  {
+    MessageAlive m;
+    _send(_peer, m);
+    _next_alive = now + LINK_ALIVE_INTERVAL_MS;
+  }
+}
+
+int Receiver::available()
 {
   bool ret = _new_data;
   _new_data = false;
@@ -106,6 +115,11 @@ int16_t Receiver::getChannel(int c) const
     case 7: return _decodeAux(_channels.ch8);
   }
   return 0;
+}
+
+bool Receiver::_allowed(const uint8_t *mac) const
+{
+  return std::equal(_peer, _peer + WIFIESPNOW_ALEN, mac);
 }
 
 template<typename T>
