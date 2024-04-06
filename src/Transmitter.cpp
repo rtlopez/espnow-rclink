@@ -90,11 +90,11 @@ void Transmitter::_handleReceived()
       case PAIR_REQ:
       {
         const auto pr = reinterpret_cast<const MessagePairRequest*>(m.payload);
-        if(_state == DISCOVERING && pr->channel >= WIFI_CHANNEL_MIN && pr->channel <= WIFI_CHANNEL_MAX)
+        if(pr->channel >= WIFI_CHANNEL_MIN && pr->channel <= WIFI_CHANNEL_MAX)
         {
           _channel = pr->channel; // assign channel
           _wifi_set_channel(_channel);
-          _state = TRANSMITTING; // stop discovery
+          _state = TRANSMITTING; // stop discovery if active
 
           std::copy_n(m.mac, WIFIESPNOW_ALEN, _peer); // remember peer address
           WifiEspNow.addPeer(_peer);

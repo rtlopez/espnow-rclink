@@ -26,12 +26,24 @@ void Receiver::_handleRx(const uint8_t *mac, const uint8_t *buf, size_t count, v
   }
 }
 
-Receiver::Receiver() {}
-
-int Receiver::begin()
+Receiver::Receiver()
 {
-  WiFi.softAP("ESPFC-RX", nullptr, _channel, 1, 2);
-  _wifi_set_channel(_channel);
+  _channels.ch1 = 1500;
+  _channels.ch2 = 1500;
+  _channels.ch3 = 1000;
+  _channels.ch4 = 1500;
+  _channels.ch5 = 0;
+  _channels.ch6 = 0;
+  _channels.ch7 = 0;
+  _channels.ch8 = 0;
+}
+
+int Receiver::begin(bool enSoftAp)
+{
+  if(enSoftAp)
+  {
+    WiFi.softAP("ESPNOW-RX", nullptr, 0, 1, 2);
+  }
 
   if(!WifiEspNow.begin()) return 0;
 
@@ -65,7 +77,7 @@ void Receiver::_handleBeacon()
   if(now >= _next_beacon)
   {
     MessagePairRequest m;
-    m.channel = _channel;
+    m.channel = WiFi.channel();
     _send(BCAST_PEER, m);
     _next_beacon = now + LINK_BEACON_INTERVAL_MS;
   }

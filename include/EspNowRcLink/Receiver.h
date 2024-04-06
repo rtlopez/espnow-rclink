@@ -14,7 +14,7 @@ public:
   };
 
   Receiver();
-  int begin();
+  int begin(bool enSoftAp = false);
   int update();
   int available();
   int16_t getChannel(int c) const;
@@ -38,7 +38,6 @@ private:
 
   volatile MessageRc _channels;
   MessageFc _sensors;
-  int _channel = WIFI_CHANNEL_DEFAULT;
   uint8_t _peer[WIFIESPNOW_ALEN] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
   uint32_t _next_beacon = 0;
   uint32_t _next_alive = 0;
