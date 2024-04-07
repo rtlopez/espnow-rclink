@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdint>
+#include <Arduino.h>
 
 namespace EspNowRcLink {
 
@@ -52,6 +52,16 @@ struct MessageRc
   int8_t ch7 = 0;
   int8_t ch8 = 0;
   uint8_t csum;
+  static int8_t encodeAux(int x)
+  {
+    x = constrain(x, PWM_INPUT_MIN, PWM_INPUT_MAX) - PWM_INPUT_CENTER;
+    int round = x > 0 ? 2 : -2;
+    return (int8_t)((x + round) / 5);
+  }
+  static uint16_t decodeAux(int8_t x)
+  {
+    return constrain(PWM_INPUT_CENTER + (x * 5), PWM_INPUT_MIN, PWM_INPUT_MAX);
+  }
 } __attribute__((packed));
 
 struct MessageAlive

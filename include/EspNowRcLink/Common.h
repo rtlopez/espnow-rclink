@@ -1,11 +1,12 @@
 #pragma once
 
-#include <WifiEspNow.h>
+#include <cstddef>
 
 #if defined(ARDUINO_ARCH_ESP8266)
 
 #include <ESP8266WiFi.h>
 #include <user_interface.h>
+#include <WifiEspNow.h>
 
 #define _wifi_set_channel(c) wifi_set_channel(c)
 
@@ -13,8 +14,14 @@
 
 #include <WiFi.h>
 #include <esp_wifi.h>
+#include <WifiEspNow.h>
 
 #define _wifi_set_channel(c) esp_wifi_set_channel(c, WIFI_SECOND_CHAN_NONE)
+
+#elif defined(UNIT_TEST)
+
+#define WIFIESPNOW_ALEN 6
+#define _wifi_set_channel(c)
 
 #endif
 
@@ -52,12 +59,14 @@ uint8_t checksum(const M& m)
 
 void inline debugMessage(const uint8_t *mac, const uint8_t *buf, size_t count)
 {
+#ifndef UNIT_TEST
   //Serial.printf("%02X:%02X:%02X:%02X:%02X:%02X> ", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
   for (size_t i = 0; i < count; ++i)
   {
     Serial.printf("%02X ", buf[i]);
   }
   Serial.println();
+#endif
 }
 
 }

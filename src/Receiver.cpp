@@ -1,9 +1,17 @@
 #include "EspNowRcLink/Receiver.h"
 #include <limits>
+#include <algorithm>
 
 namespace EspNowRcLink {
 
 const uint8_t Receiver::BCAST_PEER[WIFIESPNOW_ALEN] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+
+template<typename M>
+void _send(const uint8_t* mac, M& m)
+{
+  m.csum = checksum(m);
+  WifiEspNow.send(mac, (const uint8_t*)&m, sizeof(M));
+}
 
 void Receiver::_handleRx(const uint8_t *mac, const uint8_t *buf, size_t count, void *arg)
 {
@@ -108,11 +116,6 @@ int Receiver::available()
   return ret;
 }
 
-uint16_t Receiver::_decodeAux(int8_t x) const
-{
-  return constrain(PWM_INPUT_CENTER + (x * 5), PWM_INPUT_MIN, PWM_INPUT_MAX);
-}
-
 int16_t Receiver::getChannel(int c) const
 {
   switch(c)
@@ -121,10 +124,10 @@ int16_t Receiver::getChannel(int c) const
     case 1: return constrain(_channels.ch2, (int16_t)PWM_INPUT_MIN, (int16_t)PWM_INPUT_MAX);
     case 2: return constrain(_channels.ch3, (int16_t)PWM_INPUT_MIN, (int16_t)PWM_INPUT_MAX);
     case 3: return constrain(_channels.ch4, (int16_t)PWM_INPUT_MIN, (int16_t)PWM_INPUT_MAX);
-    case 4: return _decodeAux(_channels.ch5);
-    case 5: return _decodeAux(_channels.ch6);
-    case 6: return _decodeAux(_channels.ch7);
-    case 7: return _decodeAux(_channels.ch8);
+    case 4: return MessageRc::decodeAux(_channels.ch5);
+    case 5: return MessageRc::decodeAux(_channels.ch6);
+    case 6: return MessageRc::decodeAux(_channels.ch7);
+    case 7: return MessageRc::decodeAux(_channels.ch8);
   }
   return 0;
 }

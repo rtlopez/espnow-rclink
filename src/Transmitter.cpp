@@ -1,9 +1,16 @@
 #include "EspNowRcLink/Transmitter.h"
-
+#include <algorithm>
 
 namespace EspNowRcLink {
 
 const uint8_t Transmitter::BCAST_PEER[WIFIESPNOW_ALEN] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+
+template<typename M>
+void _send(const uint8_t* mac, M& m)
+{
+  m.csum = checksum(m);
+  WifiEspNow.send(mac, (const uint8_t*)&m, sizeof(M));
+}
 
 void Transmitter::_handleRx(const uint8_t *mac, const uint8_t *buf, size_t count, void *arg)
 {
@@ -129,16 +136,11 @@ void Transmitter::setChannel(size_t c, unsigned int value)
     case 1: _channels.ch2 = value; break;
     case 2: _channels.ch3 = value; break;
     case 3: _channels.ch4 = value; break;
-    case 4: _channels.ch5 = _encodeAux(value); break;
-    case 5: _channels.ch6 = _encodeAux(value); break;
-    case 6: _channels.ch7 = _encodeAux(value); break;
-    case 7: _channels.ch8 = _encodeAux(value); break;
+    case 4: _channels.ch5 = MessageRc::encodeAux(value); break;
+    case 5: _channels.ch6 = MessageRc::encodeAux(value); break;
+    case 6: _channels.ch7 = MessageRc::encodeAux(value); break;
+    case 7: _channels.ch8 = MessageRc::encodeAux(value); break;
   }
-}
-
-int8_t Transmitter::_encodeAux(int x) const
-{
-  return (int8_t)(((x + 2) - PWM_INPUT_CENTER) / 5);
 }
 
 bool Transmitter::_allowed(const uint8_t *mac) const

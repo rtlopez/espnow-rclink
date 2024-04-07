@@ -1,8 +1,6 @@
 #pragma once
 
-#include <algorithm>
 #include <queue>
-
 #include "Common.h"
 #include "Protocol.h"
 
@@ -23,14 +21,6 @@ public:
   void commit();
 
 private:
-  template<typename M>
-  void _send(const uint8_t* mac, M& m)
-  {
-    m.csum = checksum(m);
-    WifiEspNow.send(mac, (const uint8_t*)&m, sizeof(M));
-  }
-
-  int8_t _encodeAux(int x) const;
   void _handleDiscovery();
   void _handleTransmit();
   void _handleReceived();

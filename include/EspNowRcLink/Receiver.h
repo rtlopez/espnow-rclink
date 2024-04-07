@@ -21,13 +21,6 @@ public:
   int setSensor(int sensorId, int sensorValue);
 
 private:
-  template<typename M>
-  void _send(const uint8_t* mac, M& m)
-  {
-    m.csum = checksum(m);
-    WifiEspNow.send(mac, (const uint8_t*)&m, sizeof(M));
-  }
-  uint16_t _decodeAux(int8_t x) const;
   void _handleBeacon();
   void _handlePair();
   void _handleAlive();
