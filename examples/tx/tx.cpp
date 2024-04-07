@@ -1,65 +1,37 @@
 #include <Arduino.h>
 #include "EspNowRcLink/Transmitter.h"
 
-// uncomment to activate simultor on channel 3
-//#define ESPNOW_RCLINK_DEMO_TX_SIM
-
-using namespace EspNowRcLink;
-
-Transmitter tx;
+EspNowRcLink::Transmitter tx;
 
 void setup()
 {
-  Serial.begin(115200);
-
-  tx.begin();
-
-  tx.setChannel(0, 1500);
-  tx.setChannel(1, 1500);
-  tx.setChannel(2, 1000);
-  tx.setChannel(3, 1500);
-  tx.setChannel(4, 1500);
-  tx.setChannel(5, 1500);
-  tx.setChannel(6, 1500);
-  tx.setChannel(7, 1500);
+  // initialize transmitter
+  // - true to init hidden WiFi AP
+  // - false if you manage WiFi outside (default)
+  tx.begin(true);
 }
 
 void loop()
 {
-  static int sim_cnt = 0;
-  static bool sim_up = true;
-  int sim_speed = 4;
-
   uint32_t now = millis();
-  static uint32_t rcDataNext = now + 50;
+  static uint32_t sendNext = now + 20;
 
-  // send rc channels
-  if(rcDataNext < now)
+  // send rc channels every 20ms
+  if(now > sendNext)
   {
-    tx.setChannel(2, 1000 + (sim_cnt * sim_speed));
-    tx.commit();
-    rcDataNext = now + 20;
+    // use rc range 1000-2000
+    for(size_t c = EspNowRcLink::RC_CHANNEL_MIN; c <= EspNowRcLink::RC_CHANNEL_MAX; c++)
+    {
+      tx.setChannel(c, 1000);
+    }
 
-#ifdef ESPNOW_RCLINK_DEMO_TX_SIM
-    if(sim_up)
-    {
-      sim_cnt++;
-      if(sim_cnt >= (1000 / sim_speed))
-      {
-        sim_up = false;
-      }
-    }
-    else
-    {
-      sim_cnt--;
-      if(sim_cnt == 0)
-      {
-        sim_up = true;
-      }
-    }
-#else
-    (void)sim_up;
-#endif
+    // mark as ready to send
+    tx.commit();
+
+    // schedule next transmission
+    sendNext = now + 20;
   }
+
+  // proceed sending and handle incoming data
   tx.update();
 }

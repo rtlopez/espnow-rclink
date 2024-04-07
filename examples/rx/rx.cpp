@@ -1,35 +1,28 @@
-
+#include <Arduino.h>
 #include "EspNowRcLink/Receiver.h"
 
-using namespace EspNowRcLink;
-
-Receiver rx;
+EspNowRcLink::Receiver rx;
 
 void setup()
 {
-  Serial.begin(115200);
-  rx.begin();
+  // initialize receiver
+  // - true to init hidden WiFi AP
+  // - false if you manage WiFi outside (default)
+  rx.begin(true);
 }
 
 void loop()
 {
-  uint32_t now = millis();
-  static uint32_t rcDataNext = now + 500;
-
+  // receive data
   rx.update();
 
+  // check if new data available
   if(rx.available())
   {
-    if(rcDataNext < now)
+    for(size_t c = EspNowRcLink::RC_CHANNEL_MIN; c <= EspNowRcLink::RC_CHANNEL_MAX; c++)
     {
-      Serial.print("RC: ");
-      for(size_t i = RC_CHANNEL_MIN; i <= RC_CHANNEL_MAX; i++)
-      {
-        Serial.print(rx.getChannel(i));
-        Serial.print(' ');
-      }
-      Serial.println();
-      rcDataNext = now + 500;
+      uint16_t v = rx.getChannel(c);
+      //proceedRcChannel(c, v);
     }
   }
 }

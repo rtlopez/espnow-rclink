@@ -32,9 +32,12 @@ void Transmitter::_handleRx(const uint8_t *mac, const uint8_t *buf, size_t count
 
 Transmitter::Transmitter(): _channel(WIFI_CHANNEL_DEFAULT) {}
 
-int Transmitter::begin()
+int Transmitter::begin(bool enSoftAp)
 {
-  if(!WiFi.softAP("ESPNOW-TX", nullptr, _channel, 1, 2)) return 0;
+  if(enSoftAp)
+  {
+    if(!WiFi.softAP("ESPNOW-TX", nullptr, _channel, 1)) return 0;
+  }
 
   if (!WifiEspNow.begin()) return 0;
 

@@ -50,7 +50,7 @@ int Receiver::begin(bool enSoftAp)
 {
   if(enSoftAp)
   {
-    WiFi.softAP("ESPNOW-RX", nullptr, 0, 1, 2);
+    if(!WiFi.softAP("ESPNOW-RX", nullptr, 0, 1)) return 0;
   }
 
   if(!WifiEspNow.begin()) return 0;

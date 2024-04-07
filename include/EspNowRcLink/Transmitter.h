@@ -14,7 +14,7 @@ public:
   };
 
   Transmitter();
-  int begin();
+  int begin(bool enSoftAp = false);
   int update();
   void setChannel(size_t c, unsigned int value);
   int getSensor(size_t sensorId) const;

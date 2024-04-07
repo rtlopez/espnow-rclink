@@ -54,7 +54,7 @@ struct MessageRc
   uint8_t csum;
   static int8_t encodeAux(int x)
   {
-    x = constrain(x, PWM_INPUT_MIN, PWM_INPUT_MAX) - PWM_INPUT_CENTER;
+    x = constrain(x, (int)PWM_INPUT_MIN, (int)PWM_INPUT_MAX) - PWM_INPUT_CENTER;
     int round = x > 0 ? 2 : -2;
     return (int8_t)((x + round) / 5);
   }
