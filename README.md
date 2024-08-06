@@ -21,6 +21,14 @@ RC Link library that works on ESP-NOW for tiny models in short range.
   * transmitter will not accept any other pair request, until power cycle
   * receiver will not accept any data packet form other transmitter, until power cycle
 
+# Using in platformio
+
+```ini
+lib_deps =
+  yoursunny/WifiEspNow @ ^0.0.20230713
+  https://github.com/rtlopez/espnow-rclink/archive/refs/tags/v0.1.1.zip
+```
+
 # Examples
 
  * [Receiver](/examples/rx/rx.cpp)
