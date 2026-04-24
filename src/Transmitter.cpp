@@ -118,6 +118,7 @@ void Transmitter::_handleReceived()
           _channel = pr->channel; // assign channel
           _wifi_set_channel(_channel);
           _state = TRANSMITTING; // stop discovery if active
+          _lastAlive = millis();
 
           std::copy_n(m.mac, WIFIESPNOW_ALEN, _peer); // remember peer address
           WifiEspNow.addPeer(_peer);
@@ -133,7 +134,7 @@ void Transmitter::_handleReceived()
         break;
 
       case FC_ALIVE:
-        // TODO:
+        _lastAlive = millis();
         break;
 
       default:
@@ -179,6 +180,24 @@ int Transmitter::getSensor(size_t id) const
 void Transmitter::commit()
 {
   _ready = true;
+}
+
+void Transmitter::disconnect()
+{
+  if(_state != TRANSMITTING) return;
+  WifiEspNow.removePeer(_peer);
+  _state = DISCOVERING;
+  _lastAlive = 0;
+}
+
+Transmitter::State Transmitter::getState() const
+{
+  return _state;
+}
+
+uint32_t Transmitter::getAliveAge() const
+{
+  return millis() - _lastAlive;
 }
 
 }
