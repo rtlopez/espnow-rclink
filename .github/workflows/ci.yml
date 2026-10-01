@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+          key: pio-native-${{ hashFiles('platformio.ini') }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - run: pip install --upgrade platformio
+      - run: pio test -e native
+
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        env: [esp32-rx, esp32-tx, esp8266-rx, esp8266-tx]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+          key: pio-${{ matrix.env }}-${{ hashFiles('platformio.ini') }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - run: pip install --upgrade platformio
+      - run: pio run -e ${{ matrix.env }}
+
+  examples:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        example: [rx, tx]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+          key: pio-example-${{ matrix.example }}-${{ hashFiles('examples/*/platformio.ini') }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - run: pip install --upgrade platformio
+      - run: pio run
+        working-directory: examples/${{ matrix.example }}

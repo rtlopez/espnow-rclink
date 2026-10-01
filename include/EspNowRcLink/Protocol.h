@@ -1,8 +1,15 @@
 #pragma once
 
-#include <Arduino.h>
+#include <cstddef>
+#include <cstdint>
 
 namespace EspNowRcLink {
+
+template<typename T>
+constexpr T clamp(T v, T lo, T hi)
+{
+  return v < lo ? lo : (v > hi ? hi : v);
+}
 
 enum MessageType: uint8_t {
   RC_DATA  = 0x01, // RC Channels (0x00-0x0f tx->rx)
@@ -11,6 +18,8 @@ enum MessageType: uint8_t {
   PAIR_REQ = 0xfe, // Pair Request (beacon rx->tx)
   PAIR_RES = 0xff, // Pair Response (pair tx->rx)
 };
+
+static const size_t MAC_LEN = 6;
 
 static const size_t WIFI_CHANNEL_MIN = 1;
 static const size_t WIFI_CHANNEL_MAX = 13;
@@ -54,13 +63,13 @@ struct MessageRc
   uint8_t csum;
   static int8_t encodeAux(int x)
   {
-    x = constrain(x, (int)PWM_INPUT_MIN, (int)PWM_INPUT_MAX) - PWM_INPUT_CENTER;
+    x = clamp(x, (int)PWM_INPUT_MIN, (int)PWM_INPUT_MAX) - (int)PWM_INPUT_CENTER;
     int round = x > 0 ? 2 : -2;
     return (int8_t)((x + round) / 5);
   }
   static uint16_t decodeAux(int8_t x)
   {
-    return constrain(PWM_INPUT_CENTER + (x * 5), PWM_INPUT_MIN, PWM_INPUT_MAX);
+    return clamp((int)PWM_INPUT_CENTER + x * 5, (int)PWM_INPUT_MIN, (int)PWM_INPUT_MAX);
   }
 } __attribute__((packed));
 

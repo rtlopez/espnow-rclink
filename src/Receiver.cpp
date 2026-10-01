@@ -1,21 +1,22 @@
 #include "EspNowRcLink/Receiver.h"
+#include "Platform.h"
 #include <limits>
 #include <algorithm>
 
 namespace EspNowRcLink {
 
-const uint8_t Receiver::BCAST_PEER[WIFIESPNOW_ALEN] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+const uint8_t Receiver::BCAST_PEER[MAC_LEN] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 
 template<typename M>
 void _send(const uint8_t* mac, M& m)
 {
   m.csum = checksum(m);
-  WifiEspNow.send(mac, (const uint8_t*)&m, sizeof(M));
+  Platform::send(mac, (const uint8_t*)&m, sizeof(M));
 }
 
 void Receiver::_handleRx(const uint8_t *mac, const uint8_t *buf, size_t count, void *arg)
 {
-  // debugMessage(mac, buf, count);
+  // Platform::debugMessage(mac, buf, count);
 
   if(count < PAYLOAD_SIZE_MIN || count > PAYLOAD_SIZE_MAX) return;
   if(checksum(buf, count - 1) != buf[count - 1]) return;
@@ -24,7 +25,7 @@ void Receiver::_handleRx(const uint8_t *mac, const uint8_t *buf, size_t count, v
 
   if(buf[0] == PAIR_RES && dev->_state == BEACON)
   {
-    std::copy_n(mac, WIFIESPNOW_ALEN, dev->_peer);
+    std::copy_n(mac, MAC_LEN, dev->_peer);
     dev->_state = PAIR;
   }
   if(buf[0] == RC_DATA && dev->_state == RECEIVING && dev->_allowed(mac))
@@ -51,25 +52,25 @@ int Receiver::begin(bool enSoftAp)
   _softap = enSoftAp;
   if (_softap)
   {
-    if(!WiFi.softAP("ESPNOW-RX", nullptr, 0, 1)) return 0;
+    if(!Platform::softApBegin("ESPNOW-RX", 0)) return 0;
   }
 
-  if(!WifiEspNow.begin()) return 0;
+  if(!Platform::espnowBegin()) return 0;
 
-  if(!WifiEspNow.addPeer(BCAST_PEER)) return 0;
+  if(!Platform::addPeer(BCAST_PEER)) return 0;
 
-  WifiEspNow.onReceive(_handleRx, this);
+  Platform::onReceive(_handleRx, this);
 
   return 1;
 }
 
 void Receiver::end()
 {
-  WifiEspNow.end();
-  WifiEspNow.onReceive(nullptr, nullptr);
+  Platform::espnowEnd();
+  Platform::onReceive(nullptr, nullptr);
   if (_softap)
   {
-    WiFi.softAPdisconnect(true);
+    Platform::softApEnd();
     _softap = false;
   }
 }
@@ -93,11 +94,11 @@ int Receiver::update()
 
 void Receiver::_handleBeacon()
 {
-  uint32_t now = millis();
+  uint32_t now = Platform::millis();
   if(now >= _next_beacon)
   {
     MessagePairRequest m;
-    m.channel = WiFi.channel();
+    m.channel = Platform::getWifiChannel();
     _send(BCAST_PEER, m);
     _next_beacon = now + LINK_BEACON_INTERVAL_MS;
   }
@@ -105,14 +106,14 @@ void Receiver::_handleBeacon()
 
 void Receiver::_handlePair()
 {
-  WifiEspNow.removePeer(BCAST_PEER);
-  WifiEspNow.addPeer(_peer);
+  Platform::removePeer(BCAST_PEER);
+  Platform::addPeer(_peer);
   _state = RECEIVING;
 }
 
 void Receiver::_handleAlive()
 {
-  uint32_t now = millis();
+  uint32_t now = Platform::millis();
   if(now >= _next_alive)
   {
     MessageAlive m;
@@ -132,10 +133,10 @@ int16_t Receiver::getChannel(int c) const
 {
   switch(c)
   {
-    case 0: return constrain(_channels.ch1, (int16_t)PWM_INPUT_MIN, (int16_t)PWM_INPUT_MAX);
-    case 1: return constrain(_channels.ch2, (int16_t)PWM_INPUT_MIN, (int16_t)PWM_INPUT_MAX);
-    case 2: return constrain(_channels.ch3, (int16_t)PWM_INPUT_MIN, (int16_t)PWM_INPUT_MAX);
-    case 3: return constrain(_channels.ch4, (int16_t)PWM_INPUT_MIN, (int16_t)PWM_INPUT_MAX);
+    case 0: return clamp<int16_t>(_channels.ch1, PWM_INPUT_MIN, PWM_INPUT_MAX);
+    case 1: return clamp<int16_t>(_channels.ch2, PWM_INPUT_MIN, PWM_INPUT_MAX);
+    case 2: return clamp<int16_t>(_channels.ch3, PWM_INPUT_MIN, PWM_INPUT_MAX);
+    case 3: return clamp<int16_t>(_channels.ch4, PWM_INPUT_MIN, PWM_INPUT_MAX);
     case 4: return MessageRc::decodeAux(_channels.ch5);
     case 5: return MessageRc::decodeAux(_channels.ch6);
     case 6: return MessageRc::decodeAux(_channels.ch7);
@@ -146,7 +147,7 @@ int16_t Receiver::getChannel(int c) const
 
 bool Receiver::_allowed(const uint8_t *mac) const
 {
-  return std::equal(_peer, _peer + WIFIESPNOW_ALEN, mac);
+  return std::equal(_peer, _peer + MAC_LEN, mac);
 }
 
 template<typename T>
