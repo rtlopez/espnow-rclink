@@ -27,12 +27,12 @@ private:
   void _handleAlive();
 
   bool _allowed(const uint8_t *mac) const;
-  static void _handleRx(const uint8_t *mac, const uint8_t *buf, size_t count, void *arg) IRAM_ATTR;
-  static const uint8_t BCAST_PEER[WIFIESPNOW_ALEN];
+  static void _handleRx(const uint8_t *mac, const uint8_t *buf, size_t count, void *arg);
+  static const uint8_t BCAST_PEER[MAC_LEN];
 
   volatile MessageRc _channels;
   MessageFc _sensors;
-  uint8_t _peer[WIFIESPNOW_ALEN] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+  uint8_t _peer[MAC_LEN] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
   uint32_t _next_beacon = 0;
   uint32_t _next_alive = 0;
   State _state = BEACON;

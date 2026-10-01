@@ -23,6 +23,7 @@ void loop()
     {
       uint16_t v = rx.getChannel(c);
       //proceedRcChannel(c, v);
+      (void)v; // suppress compiler warning
     }
   }
 }
