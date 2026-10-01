@@ -20,6 +20,9 @@ public:
   void setChannel(size_t c, unsigned int value);
   int getSensor(size_t sensorId) const;
   void commit();
+  void disconnect();
+  State getState() const;
+  uint32_t getAliveAge() const;
 
 private:
   void _handleDiscovery();
@@ -39,6 +42,7 @@ private:
   std::queue<Message> _queue;
   bool _ready = false;
   bool _softap = false;
+  uint32_t _lastAlive = 0;
 };
 
 }
